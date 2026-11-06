@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+*.swp
+*.swo
+.env
+venv/
+.kilo/
+index2.html
+index3.html
+index4.html
+.DS_Store

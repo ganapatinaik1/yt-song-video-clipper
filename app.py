@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, send_file, render_template_string
-import subprocess, os, tempfile, glob, json, shutil, platform, sys
+import subprocess, os, tempfile, glob, json, shutil, platform, sys, urllib.request, urllib.parse, urllib.request
 
 app = Flask(__name__)
 
@@ -28,27 +28,169 @@ def _find_ffmpeg():
     return ""
 
 FFMPEG_BIN = _find_ffmpeg()
-FFMPEG_EXE = os.path.join(FFMPEG_BIN, "ffmpeg.exe") if (FFMPEG_BIN and platform.system() == "Windows") else "ffmpeg"
+FFMPEG_EXE = os.path.join(FFMPEG_BIN, "ffmpeg.exe" if platform.system() == "Windows" else "ffmpeg") if FFMPEG_BIN else "ffmpeg"
+COOKIES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cookies.txt")
+YTDLP_PROXY = os.environ.get("YTDLP_PROXY", "").strip()
 
-HTML = open(os.path.join(os.path.dirname(__file__), "index.html"), encoding="utf-8").read()
+INDEX_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "index.html")
 
 @app.route("/")
 def index():
-    return render_template_string(HTML)
+    with open(INDEX_PATH, encoding="utf-8") as f:
+        return render_template_string(f.read())
 
-@app.route("/info", methods=["POST"])
-def info():
-    data = request.json
+@app.route("/cookies-status")
+def cookies_status():
+    has_cookies = os.path.isfile(COOKIES_FILE) and os.path.getsize(COOKIES_FILE) > 0
+    return jsonify({"has_cookies": has_cookies})
+
+@app.route("/upload-cookies", methods=["POST"])
+def upload_cookies():
+    if "cookies_file" not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+    f = request.files["cookies_file"]
+    if not f.filename:
+        return jsonify({"error": "No file selected"}), 400
+    f.save(COOKIES_FILE)
+    return jsonify({"success": True, "message": "Cookies saved successfully!"})
+
+@app.route("/search", methods=["POST"])
+def search():
+    data = request.json or {}
     url = data.get("url", "").strip()
     if not url:
         return jsonify({"error": "No URL provided"}), 400
     try:
-        result = subprocess.run(
-            [sys.executable, "-m", "yt_dlp", "--dump-json", "--no-playlist", url],
-            capture_output=True, text=True, timeout=30
-        )
+        is_spotify = "spotify.com" in url or "spotify.link" in url
+        is_url = url.startswith("http://") or url.startswith("https://")
+
+        query = ""
+        if is_spotify:
+            query = ""
+            try:
+                enc_url = urllib.parse.quote(url, safe="")
+                oembed_url = "https://open.spotify.com/oembed?url=" + enc_url
+                req = urllib.request.Request(oembed_url, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    oembed = json.loads(resp.read().decode("utf-8"))
+                title = oembed.get("title", "")
+                author = oembed.get("author_name", "")
+                query = f"{title} {author}".strip() if title and author else (title or "")
+            except Exception as oe:
+                return jsonify({"error": "Could not read Spotify link. Try typing the song name instead."}), 400
+        elif not is_url:
+            query = url
+        else:
+            return jsonify({"error": "Paste a Spotify link or type a song name to search"}), 400
+
+        if not query:
+            return jsonify({"error": "Could not read song name from link"}), 400
+
+        results = []
+
+        # ── SoundCloud: up to 5 results, filter <30s ──
+        sc_cmd = [
+            sys.executable, "-m", "yt_dlp",
+            "--dump-json", "--no-playlist", "--no-warnings",
+            "--flat-playlist", "--max-downloads", "5",
+            f"scsearch5:{query}",
+        ]
+        if YTDLP_PROXY:
+            sc_cmd += ["--proxy", YTDLP_PROXY]
+        if os.path.isfile(COOKIES_FILE) and os.path.getsize(COOKIES_FILE) > 0:
+            sc_cmd += ["--cookies", COOKIES_FILE]
+        sc_result = subprocess.run(sc_cmd, capture_output=True, text=True, timeout=30)
+        if sc_result.returncode == 0:
+            for line in sc_result.stdout.strip().splitlines():
+                if not line.strip():
+                    continue
+                try:
+                    entry = json.loads(line)
+                except Exception:
+                    continue
+                dur = entry.get("duration") or 0
+                if dur and dur < 30:
+                    continue
+                results.append({
+                    "source": "soundcloud",
+                    "url": entry.get("webpage_url") or entry.get("url", ""),
+                    "title": entry.get("title", "Unknown"),
+                    "uploader": entry.get("uploader", ""),
+                    "duration": dur,
+                    "thumbnail": entry.get("thumbnail", ""),
+                    "id": entry.get("id", ""),
+                })
+
+        # ── JioSaavn: up to 3 results ──
+        jiosaavn_cmd = [
+            sys.executable, "-m", "yt_dlp",
+            "--dump-json", "--no-playlist", "--no-warnings",
+            "--flat-playlist", "--max-downloads", "3",
+            f"jiosaavnsearch:{query}",
+        ]
+        if YTDLP_PROXY:
+            jiosaavn_cmd += ["--proxy", YTDLP_PROXY]
+        if os.path.isfile(COOKIES_FILE) and os.path.getsize(COOKIES_FILE) > 0:
+            jiosaavn_cmd += ["--cookies", COOKIES_FILE]
+        js_result = subprocess.run(jiosaavn_cmd, capture_output=True, text=True, timeout=30)
+        if js_result.returncode == 0:
+            for line in js_result.stdout.strip().splitlines():
+                if not line.strip():
+                    continue
+                try:
+                    entry = json.loads(line)
+                except Exception:
+                    continue
+                dur = entry.get("duration") or 0
+                if dur and dur < 30:
+                    continue
+                results.append({
+                    "source": "jiosaavn",
+                    "url": entry.get("webpage_url") or entry.get("url", ""),
+                    "title": entry.get("title", "Unknown"),
+                    "uploader": entry.get("uploader", ""),
+                    "duration": dur,
+                    "thumbnail": entry.get("thumbnail", ""),
+                    "id": entry.get("id", ""),
+                })
+
+        if not results:
+            return jsonify({"error": "No results found on SoundCloud or JioSaavn"}), 400
+
+        return jsonify({"results": results})
+    except subprocess.TimeoutExpired:
+        return jsonify({"error": "Search timed out"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/info", methods=["POST"])
+def info():
+    data = request.json or {}
+    url = data.get("url", "").strip()
+    if not url:
+        return jsonify({"error": "No URL provided"}), 400
+    try:
+        cmd = [
+            sys.executable, "-m", "yt_dlp",
+            "--dump-json",
+            "--no-playlist",
+            "--no-warnings",
+            "--concurrent-fragments", "3",
+            "--extractor-args", "youtube:player_client=tv,mweb",
+        ]
+        if YTDLP_PROXY:
+            cmd += ["--proxy", YTDLP_PROXY]
+        if os.path.isfile(COOKIES_FILE) and os.path.getsize(COOKIES_FILE) > 0:
+            cmd += ["--cookies", COOKIES_FILE]
+        cmd.append(url)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=25)
         if result.returncode != 0:
-            return jsonify({"error": "Could not fetch video info. Check the URL."}), 400
+            err = result.stderr.strip()
+            for line in err.splitlines():
+                if "ERROR:" in line:
+                    err = line.replace("ERROR:", "").strip()
+                    break
+            return jsonify({"error": err or "Could not fetch video info. Check the URL."}), 400
         meta = json.loads(result.stdout)
 
         formats = meta.get("formats", [])
@@ -88,6 +230,7 @@ def clip():
     song_title = data.get("song_title", "").strip()
     artist     = data.get("artist", "").strip()
     vid_title  = data.get("video_title", "").strip()
+    thumb_url  = data.get("thumb_url", "").strip()
 
     if not url:
         return jsonify({"error": "No URL"}), 400
@@ -100,14 +243,29 @@ def clip():
     tmpdir = tempfile.mkdtemp()
     try:
         out_template = os.path.join(tmpdir, "clip.%(ext)s")
-        cmd = [sys.executable, "-m", "yt_dlp", "--no-playlist", "-o", out_template]
+        cmd = [
+            sys.executable, "-m", "yt_dlp",
+            "--no-playlist",
+            "--no-warnings",
+            "--concurrent-fragments", "3",
+            "--extractor-args", "youtube:player_client=tv,mweb",
+            "-o", out_template
+        ]
+        if YTDLP_PROXY:
+            cmd += ["--proxy", YTDLP_PROXY]
         if FFMPEG_BIN:
             cmd += ["--ffmpeg-location", FFMPEG_BIN]
+        if os.path.isfile(COOKIES_FILE) and os.path.getsize(COOKIES_FILE) > 0:
+            cmd += ["--cookies", COOKIES_FILE]
 
-        if start_s is not None or end_s is not None:
-            s = secs_to_ts(start_s) if start_s is not None else "0"
-            e = secs_to_ts(end_s)   if end_s   is not None else "inf"
-            cmd += ["--download-sections", f"*{s}-{e}", "--force-keyframes-at-cuts"]
+        need_trim = start_s is not None and start_s > 0
+        if need_trim:
+            s = secs_to_ts(start_s)
+            e = secs_to_ts(end_s) if end_s is not None else None
+            if e is not None:
+                cmd += ["--download-sections", f"*{s}-{e}", "--force-keyframes-at-cuts"]
+            else:
+                cmd += ["--download-sections", f"*{s}-*", "--force-keyframes-at-cuts"]
 
         if fmt == "mp3":
             cmd += ["-x", "--audio-format", "mp3", "--audio-quality", "0"]
@@ -121,55 +279,36 @@ def clip():
             cmd += ["-f", fmt_str, "--merge-output-format", "mp4"]
 
         cmd.append(url)
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
         if result.returncode != 0:
-            return jsonify({"error": result.stderr[-800:] or "Download failed"}), 500
+            shutil.rmtree(tmpdir, ignore_errors=True)
+            err = result.stderr.strip()
+            for line in err.splitlines():
+                if "ERROR:" in line:
+                    err = line.replace("ERROR:", "").strip()
+                    break
+            return jsonify({"error": err or "Download failed"}), 500
 
         files = glob.glob(os.path.join(tmpdir, "*"))
+        # Exclude directories like thumb
+        files = [f for f in files if os.path.isfile(f)]
         if not files:
+            shutil.rmtree(tmpdir, ignore_errors=True)
             return jsonify({"error": "No output file generated"}), 500
 
         out_file = files[0]
         ext = os.path.splitext(out_file)[1]
 
-        # Embed ID3v2.3 tags + cover art via mutagen (WMP-compatible APIC frame)
+        # Embed ID3v2.3 tags via mutagen (WMP-compatible APIC frame)
         if fmt == "mp3":
             try:
                 from mutagen.id3 import ID3, TIT2, TPE1, TALB, APIC, ID3NoHeaderError
 
-                thumb_jpg = None
-                try:
-                    thumb_dir = os.path.join(tmpdir, "thumb")
-                    os.makedirs(thumb_dir, exist_ok=True)
-                    thumb_cmd = [
-                        sys.executable, "-m", "yt_dlp", "--no-playlist",
-                        "--write-thumbnail", "--skip-download",
-                        "--convert-thumbnails", "jpg",
-                        "-o", os.path.join(thumb_dir, "cover.%(ext)s"),
-                    ]
-                    if FFMPEG_BIN:
-                        thumb_cmd += ["--ffmpeg-location", FFMPEG_BIN]
-                    thumb_cmd.append(url)
-                    subprocess.run(thumb_cmd, capture_output=True, timeout=30)
-                    candidates = glob.glob(os.path.join(thumb_dir, "*"))
-                    if candidates:
-                        raw_thumb = candidates[0]
-                        sq_thumb = os.path.join(tmpdir, "cover_sq.jpg")
-                        sq_cmd = [
-                            FFMPEG_EXE, "-y", "-i", raw_thumb,
-                            "-vf", "crop='min(iw,ih)':'min(iw,ih)'",
-                            "-q:v", "2", sq_thumb
-                        ]
-                        r_sq = subprocess.run(sq_cmd, capture_output=True)
-                        thumb_jpg = sq_thumb if (r_sq.returncode == 0 and os.path.exists(sq_thumb)) else raw_thumb
-                except Exception:
-                    thumb_jpg = None
+                tags = ID3(out_file)
+            except ID3NoHeaderError:
+                tags = ID3()
 
-                try:
-                    tags = ID3(out_file)
-                except ID3NoHeaderError:
-                    tags = ID3()
-
+            try:
                 tags.clear()
 
                 if song_title:
@@ -178,42 +317,69 @@ def clip():
                 if artist:
                     tags["TPE1"] = TPE1(encoding=3, text=artist)
 
+                thumb_jpg = None
+                if thumb_url:
+                    try:
+                        thumb_path = os.path.join(tmpdir, "cover.jpg")
+                        req = urllib.request.Request(thumb_url, headers={
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+                            "Accept": "image/avif,image/webp,image/*,*/*;q=0.8",
+                            "Referer": "https://www.youtube.com/",
+                        })
+                        urllib.request.urlretrieve(thumb_url, thumb_path)
+                        if os.path.exists(thumb_path) and os.path.getsize(thumb_path) > 0:
+                            thumb_jpg = thumb_path
+                        else:
+                            thumb_jpg = None
+                    except Exception:
+                        thumb_jpg = None
+
                 if thumb_jpg and os.path.exists(thumb_jpg):
                     with open(thumb_jpg, "rb") as img_f:
                         img_data = img_f.read()
                     tags["APIC"] = APIC(
                         encoding=3,
                         mime="image/jpeg",
-                        type=3,       # 3 = Cover (front) — required by WMP
+                        type=3,
                         desc="Cover",
                         data=img_data
                     )
 
-                tags.save(out_file, v2_version=3)  # ID3v2.3 for max WMP compat
+                tags.save(out_file, v2_version=3)
 
             except Exception:
-                pass  # Still return audio even if tagging fails
+                pass
 
         if fmt == "mp3":
-            dl_name = sanitize_filename(song_title or "podclip") + ".mp3"
+            dl_name = sanitize_filename(song_title or "downloadthebeat") + ".mp3"
         else:
-            dl_name = sanitize_filename(vid_title or "podclip") + ".mp4"
+            dl_name = sanitize_filename(vid_title or "downloadthebeat") + ".mp4"
 
-        return send_file(
+        resp = send_file(
             out_file,
             mimetype="audio/mpeg" if ext == ".mp3" else "video/mp4",
             as_attachment=True,
             download_name=dl_name
         )
 
+        @resp.call_on_close
+        def _cleanup():
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
+        return resp
+
     except subprocess.TimeoutExpired:
+        shutil.rmtree(tmpdir, ignore_errors=True)
         return jsonify({"error": "Download timed out"}), 500
     except Exception as e:
+        shutil.rmtree(tmpdir, ignore_errors=True)
         return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
-    print("PodClipper running at http://localhost:5000")
+    host = os.environ.get("HOST", "0.0.0.0")
+    port = int(os.environ.get("PORT", 5000))
+    print(f"PodClipper running at http://{host}:{port}")
     if not FFMPEG_BIN:
         print("WARNING: ffmpeg not found. Place it in a 'ffmpeg/bin' folder next to app.py, or set the FFMPEG_BIN env variable.")
-    app.run(debug=False, port=5000)
+    app.run(host=host, port=port, debug=False)

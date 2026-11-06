@@ -1,6 +1,6 @@
 # ✂️ yt-clip-downloader
 
-A local web app to clip and download songs and videos from YouTube — with a built-in video player for trimming, proper MP3 tags (title, artist, cover art), and MP4 video up to 4K.
+A local web app to search, trim, and download songs and videos — paste a **YouTube URL, Spotify link, or song keyword** into one search box. Results come from SoundCloud (fast, no bot blocks) and JioSaavn (Hindi coverage). Download as MP3 with cover art and ID3 tags, or MP4 up to 4K.
 
 ---
 
@@ -16,7 +16,9 @@ The bat file automatically installs everything it needs (flask, yt-dlp, mutagen)
 
 ## What it does
 
-- Paste any YouTube URL and fetch the video info
+- Paste a **YouTube URL**, **Spotify link**, or type a **song keyword** into one input box
+- If you paste a Spotify link, the app reads the song title/artist and searches SoundCloud + JioSaavn for matches
+- Pick from up to 5 SoundCloud + 3 JioSaavn results (short clips under 30s are filtered out)
 - Watch the video inside the app to find exactly where to trim
 - Set a start and end point using drag handles or keyboard shortcuts
 - Download as **Song (MP3)** — with cover art, title, and artist embedded
@@ -34,6 +36,18 @@ The bat file automatically installs everything it needs (flask, yt-dlp, mutagen)
 | `]` | Set trim end at current position |
 | `←` | Rewind 1 second |
 | `→` | Forward 1 second |
+
+---
+
+## Configuration
+
+Create a `.env` file next to `app.py` if you need a proxy for YouTube (optional):
+
+```
+YTDLP_PROXY=http://proxyuser:proxypass@proxyhost:proxyport
+```
+
+See `.env.example` for the format. SoundCloud and JioSaavn searches work without a proxy on most networks.
 
 ---
 
@@ -101,8 +115,10 @@ Then open http://localhost:5000 in your browser.
 
 **Port 5000 already in use** — Another instance is already running, just go to http://localhost:5000
 
+**No search results** — Try a more specific song name, or check your internet connection
+
 ---
 
 ## License
 
-MIT
+MIT — by Ganapati Naik
