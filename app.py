@@ -121,41 +121,8 @@ def search():
                     "id": entry.get("id", ""),
                 })
 
-        # ── JioSaavn: up to 3 results ──
-        jiosaavn_cmd = [
-            sys.executable, "-m", "yt_dlp",
-            "--dump-json", "--no-playlist", "--no-warnings",
-            "--flat-playlist", "--max-downloads", "3",
-            f"jiosaavnsearch:{query}",
-        ]
-        if YTDLP_PROXY:
-            jiosaavn_cmd += ["--proxy", YTDLP_PROXY]
-        if os.path.isfile(COOKIES_FILE) and os.path.getsize(COOKIES_FILE) > 0:
-            jiosaavn_cmd += ["--cookies", COOKIES_FILE]
-        js_result = subprocess.run(jiosaavn_cmd, capture_output=True, text=True, timeout=30)
-        if js_result.returncode == 0:
-            for line in js_result.stdout.strip().splitlines():
-                if not line.strip():
-                    continue
-                try:
-                    entry = json.loads(line)
-                except Exception:
-                    continue
-                dur = entry.get("duration") or 0
-                if dur and dur < 30:
-                    continue
-                results.append({
-                    "source": "jiosaavn",
-                    "url": entry.get("webpage_url") or entry.get("url", ""),
-                    "title": entry.get("title", "Unknown"),
-                    "uploader": entry.get("uploader", ""),
-                    "duration": dur,
-                    "thumbnail": entry.get("thumbnail", ""),
-                    "id": entry.get("id", ""),
-                })
-
         if not results:
-            return jsonify({"error": "No results found on SoundCloud or JioSaavn"}), 400
+            return jsonify({"error": "No results found on SoundCloud"}), 400
 
         return jsonify({"results": results})
     except subprocess.TimeoutExpired:
