@@ -3,6 +3,7 @@ __pycache__/
 *.pyo
 *.swp
 *.swo
+.previous.txt.kate-swp
 .env
 venv/
 .kilo/
