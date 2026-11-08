@@ -17,8 +17,8 @@ The bat file automatically installs everything it needs (flask, yt-dlp, mutagen)
 ## What it does
 
 - Paste a **YouTube URL**, **Spotify link**, or type a **song keyword** into one input box
-- If you paste a Spotify link, the app reads the song title/artist and searches SoundCloud for matches
-- Pick from up to 5 SoundCloud results (short clips under 30s are filtered out)
+- If you paste a Spotify link, the app reads the song title/artist and searches multiple music sources for matches
+- Results come from **SoundCloud**, **YouTube**, **Bandcamp**, **Audiomack**, **Audius**, and **JioSaavn** (up to 5 each, short clips under 30s filtered out)
 - Watch the video inside the app to find exactly where to trim
 - Set a start and end point using drag handles or keyboard shortcuts
 - Download as **Song (MP3)** — with cover art, title, and artist embedded
@@ -47,7 +47,7 @@ Create a `.env` file next to `app.py` if you need a proxy for YouTube (optional)
 YTDLP_PROXY=http://proxyuser:proxypass@proxyhost:proxyport
 ```
 
-See `.env.example` for the format. SoundCloud search works without a proxy on most networks. JioSaavn search is attempted via yt-dlp but may not return results depending on yt-dlp extractor support.
+See `.env.example` for the format. Search uses SoundCloud, YouTube, Bandcamp, Audiomack, Audius, and JioSaavn in parallel. SoundCloud is the most reliable source; JioSaavn may not return results depending on yt-dlp extractor support.
 
 ---
 

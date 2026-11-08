@@ -142,17 +142,77 @@ def search():
         if os.path.isfile(COOKIES_FILE) and os.path.getsize(COOKIES_FILE) > 0:
             js_cmd += ["--cookies", COOKIES_FILE]
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        # ── YouTube Music: up to 5 results (best for Hindi/Bollywood) ──
+        yt_cmd = [
+            sys.executable, "-m", "yt_dlp",
+            "--dump-json", "--no-playlist", "--no-warnings",
+            "--flat-playlist", "--max-downloads", "5",
+            f"ytsearch5:{query}",
+        ]
+        if YTDLP_PROXY:
+            yt_cmd += ["--proxy", YTDLP_PROXY]
+        if os.path.isfile(COOKIES_FILE) and os.path.getsize(COOKIES_FILE) > 0:
+            yt_cmd += ["--cookies", COOKIES_FILE]
+
+        # ── Bandcamp: up to 3 results ──
+        bc_cmd = [
+            sys.executable, "-m", "yt_dlp",
+            "--dump-json", "--no-playlist", "--no-warnings",
+            "--flat-playlist", "--max-downloads", "3",
+            f"bandcampsearch:{query}",
+        ]
+        if YTDLP_PROXY:
+            bc_cmd += ["--proxy", YTDLP_PROXY]
+        if os.path.isfile(COOKIES_FILE) and os.path.getsize(COOKIES_FILE) > 0:
+            bc_cmd += ["--cookies", COOKIES_FILE]
+
+        # ── Audiomack: up to 3 results ──
+        am_cmd = [
+            sys.executable, "-m", "yt_dlp",
+            "--dump-json", "--no-playlist", "--no-warnings",
+            "--flat-playlist", "--max-downloads", "3",
+            f"audiomacksearch:{query}",
+        ]
+        if YTDLP_PROXY:
+            am_cmd += ["--proxy", YTDLP_PROXY]
+        if os.path.isfile(COOKIES_FILE) and os.path.getsize(COOKIES_FILE) > 0:
+            am_cmd += ["--cookies", COOKIES_FILE]
+
+        # ── Audius: up to 3 results ──
+        au_cmd = [
+            sys.executable, "-m", "yt_dlp",
+            "--dump-json", "--no-playlist", "--no-warnings",
+            "--flat-playlist", "--max-downloads", "3",
+            f"audiussearch:{query}",
+        ]
+        if YTDLP_PROXY:
+            au_cmd += ["--proxy", YTDLP_PROXY]
+        if os.path.isfile(COOKIES_FILE) and os.path.getsize(COOKIES_FILE) > 0:
+            au_cmd += ["--cookies", COOKIES_FILE]
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
             sc_future = executor.submit(run_yt_dlp, sc_cmd, "soundcloud")
             js_future = executor.submit(run_yt_dlp, js_cmd, "jiosaavn")
+            yt_future = executor.submit(run_yt_dlp, yt_cmd, "youtube")
+            bc_future = executor.submit(run_yt_dlp, bc_cmd, "bandcamp")
+            am_future = executor.submit(run_yt_dlp, am_cmd, "audiomack")
+            au_future = executor.submit(run_yt_dlp, au_cmd, "audius")
             sc_results = sc_future.result(timeout=35)
             js_results = js_future.result(timeout=35)
+            yt_results = yt_future.result(timeout=35)
+            bc_results = bc_future.result(timeout=35)
+            am_results = am_future.result(timeout=35)
+            au_results = au_future.result(timeout=35)
 
         results.extend(sc_results)
         results.extend(js_results)
+        results.extend(yt_results)
+        results.extend(bc_results)
+        results.extend(am_results)
+        results.extend(au_results)
 
         if not results:
-            return jsonify({"error": "No results found on SoundCloud"}), 400
+            return jsonify({"error": "No results found on SoundCloud, JioSaavn, YouTube, Bandcamp, Audiomack, or Audius"}), 400
 
         return jsonify({"results": results})
     except subprocess.TimeoutExpired:
