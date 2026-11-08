@@ -1,124 +1,60 @@
-# ✂️ yt-clip-downloader
+downloadthebeat
 
-A local web app to search, trim, and download songs and videos — paste a **YouTube URL, Spotify link, or song keyword** into one search box. Results come from SoundCloud (fast, no bot blocks) and JioSaavn (Hindi coverage). Download as MP3 with cover art and ID3 tags, or MP4 up to 4K.
+Download songs and videos from YouTube by pasting a link or searching by song name.
 
----
+Usage
 
-## Just double-click `PodClipper.bat` — that's it.
+Windows
 
-The bat file automatically installs everything it needs (flask, yt-dlp, mutagen) on first run. After that it starts instantly with no reinstalling. Your browser opens to the app automatically.
+Double-click downloadthebeat.bat
 
-**The only thing you need installed beforehand is:**
-- [Python](https://python.org/downloads) — make sure to check **"Add Python to PATH"** during installation
-- [ffmpeg](https://ffmpeg.org/download.html) — install via `winget install ffmpeg` in Command Prompt, or place the `ffmpeg/bin` folder next to `app.py` (see troubleshooting below)
+The script will:
+1. Check if Python is installed
+2. Install required Python packages (flask, yt-dlp, mutagen) if missing
+3. Check for ffmpeg and install it if possible
+4. Start the server at http://localhost:5000
+5. Open your browser automatically
 
----
+Linux
 
-## What it does
+1. Make sure Python 3 is installed:
+   python3 --version
 
-- Paste a **YouTube URL**, **Spotify link**, or type a **song keyword** into one input box
-- If you paste a Spotify link, the app reads the song title/artist and searches multiple music sources for matches
-- Results come from **SoundCloud**, **YouTube**, **Bandcamp**, **Audiomack**, **Audius**, and **JioSaavn** (up to 5 each, short clips under 30s filtered out)
-- Watch the video inside the app to find exactly where to trim
-- Set a start and end point using drag handles or keyboard shortcuts
-- Download as **Song (MP3)** — with cover art, title, and artist embedded
-- Download as **Video (MP4)** — up to 4K quality
-- Edit the song title, artist name, and file name before downloading
+2. Install ffmpeg if not present:
+   sudo apt update && sudo apt install ffmpeg -y
 
----
+3. Install Python dependencies:
+   pip3 install flask yt-dlp mutagen
 
-## Keyboard shortcuts
+4. Start the app:
+   python3 app.py
 
-| Key | Action |
-|---|---|
-| `Space` | Play / Pause |
-| `[` | Set trim start at current position |
-| `]` | Set trim end at current position |
-| `←` | Rewind 1 second |
-| `→` | Forward 1 second |
+5. Open http://localhost:5000 in your browser
 
----
+How it works
 
-## Configuration
+- Paste a YouTube URL, Spotify link, or type a song keyword into the input box
+- If you paste a Spotify link, the app reads the song title and artist, then searches SoundCloud
+- Pick a result from the list
+- Trim the start and end of the clip using the drag handles
+- Click Download to save as MP3 (with title, artist, and cover art) or MP4 (up to 4K)
 
-Create a `.env` file next to `app.py` if you need a proxy for YouTube (optional):
+Troubleshooting
 
-```
-YTDLP_PROXY=http://proxyuser:proxypass@proxyhost:proxyport
-```
+Python not found
 
-See `.env.example` for the format. Search uses SoundCloud, YouTube, Bandcamp, Audiomack, Audius, and JioSaavn in parallel. SoundCloud is the most reliable source; JioSaavn may not return results depending on yt-dlp extractor support.
+Install Python from https://www.python.org/downloads and check "Add Python to PATH" during installation.
 
----
+ffmpeg not found
 
-## Troubleshooting
+Install ffmpeg:
+- Windows: winget install ffmpeg
+- Linux: sudo apt install ffmpeg
 
-If double-clicking the bat doesn't work, follow the steps below.
+Port 5000 already in use
 
-### Step 1 — Install Python
+Another instance is already running. Open http://localhost:5000 in your browser.
 
-Download from https://python.org/downloads and run the installer.
+No search results
 
-**Important:** On the first screen check **"Add Python to PATH"** before clicking Install.
-
-Verify in Command Prompt:
-```
-python --version
-```
-
-### Step 2 — Install ffmpeg
-
-**Option A — winget (easiest):**
-```
-winget install ffmpeg
-```
-Close and reopen Command Prompt after.
-
-**Option B — manual:**
-1. Download from https://ffmpeg.org/download.html → Windows → gyan.dev → `ffmpeg-release-essentials.zip`
-2. Extract it and find the `bin` folder inside
-3. Create a folder called `ffmpeg` next to `app.py` and put `bin` inside it:
-```
-yt-clip-downloader/
-  app.py
-  index.html
-  ffmpeg/
-    bin/
-      ffmpeg.exe
-      ffprobe.exe
-```
-
-### Step 3 — Install Python packages manually
-
-Open Command Prompt in the project folder and run:
-```
-pip install flask yt-dlp mutagen
-```
-
-### Step 4 — Run
-```
-python app.py
-```
-Then open http://localhost:5000 in your browser.
-
----
-
-## Common errors
-
-**"Python is not installed"** — Install Python from python.org, check "Add to PATH"
-
-**500 error when fetching a video** — Run `pip install --upgrade yt-dlp` to get the latest version
-
-**ffmpeg not found** — Either `winget install ffmpeg` or place ffmpeg manually next to app.py (see Step 2 above)
-
-**Cover art not showing in Windows Media Player** — Run `pip install mutagen` then download again
-
-**Port 5000 already in use** — Another instance is already running, just go to http://localhost:5000
-
-**No search results** — Try a more specific song name, or check your internet connection
-
----
-
-## License
-
-MIT — by Ganapati Naik
+Try a different song name or check your internet connection.

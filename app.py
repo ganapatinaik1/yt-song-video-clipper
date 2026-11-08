@@ -346,7 +346,7 @@ def clip():
 if __name__ == "__main__":
     host = os.environ.get("HOST", "0.0.0.0")
     port = int(os.environ.get("PORT", 5000))
-    print(f"PodClipper running at http://{host}:{port}")
+    print(f"downloadthebeat running at http://{host}:{port}")
     if not FFMPEG_BIN:
         print("WARNING: ffmpeg not found. Place it in a 'ffmpeg/bin' folder next to app.py, or set the FFMPEG_BIN env variable.")
     app.run(host=host, port=port, debug=False)

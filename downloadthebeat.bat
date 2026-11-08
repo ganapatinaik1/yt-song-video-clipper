@@ -1,11 +1,11 @@
 @echo off
-title PodClipper
+title downloadthebeat
 cd /d "%~dp0"
 
 REM ── If already running, just open the browser and exit ──────────────────────
 netstat -ano | findstr ":5000" >nul 2>&1
 if %errorlevel%==0 (
-    echo PodClipper is already running - opening browser...
+    echo downloadthebeat is already running - opening browser...
     start http://localhost:5000
     exit
 )
@@ -24,7 +24,7 @@ if %errorlevel% neq 0 (
     echo  IMPORTANT: On the first screen of the installer,
     echo  check the box "Add Python to PATH" before clicking Install.
     echo.
-    echo  After installing Python, double-click PodClipper.bat again.
+    echo  After installing Python, double-click downloadthebeat.bat again.
     echo ============================================================
     echo.
     pause
@@ -32,7 +32,7 @@ if %errorlevel% neq 0 (
     exit
 )
 
-REM ── Install packages only if missing (no reinstall on every run) ─────────────
+REM ── Install packages only if missing ─────────────────────────────────────────
 echo Checking dependencies...
 
 python -c "import flask" >nul 2>&1
@@ -56,7 +56,6 @@ if %errorlevel% neq 0 (
 REM ── Check ffmpeg ─────────────────────────────────────────────────────────────
 ffmpeg -version >nul 2>&1
 if %errorlevel% neq 0 (
-    REM Check if portable ffmpeg is sitting next to app.py
     if exist "%~dp0ffmpeg\bin\ffmpeg.exe" (
         echo Found portable ffmpeg.
     ) else (
@@ -84,7 +83,7 @@ echo All dependencies ready.
 echo.
 
 REM ── Start the server ─────────────────────────────────────────────────────────
-echo Starting PodClipper...
+echo Starting downloadthebeat...
 start "" /B python app.py
 
 REM ── Wait for Flask to boot then open browser ─────────────────────────────────
