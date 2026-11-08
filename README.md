@@ -2,6 +2,8 @@ downloadthebeat
 
 Download songs and videos from YouTube by pasting a link or searching by song name.
 
+Live server: https://downloadthebeat.duckdns.org/
+
 Usage
 
 Windows
