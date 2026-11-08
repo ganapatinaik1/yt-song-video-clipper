@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, send_file, render_template_string
-import subprocess, os, tempfile, glob, json, shutil, platform, sys, urllib.request, urllib.parse, urllib.request, concurrent.futures
+import subprocess, os, tempfile, glob, json, shutil, platform, sys, urllib.request, urllib.parse
 
 app = Flask(__name__)
 
@@ -86,38 +86,7 @@ def search():
         if not query:
             return jsonify({"error": "Could not read song name from link"}), 400
 
-        results = []
-
-        def run_yt_dlp(cmd, source):
-            try:
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-                if result.returncode == 0:
-                    items = []
-                    for line in result.stdout.strip().splitlines():
-                        if not line.strip():
-                            continue
-                        try:
-                            entry = json.loads(line)
-                        except Exception:
-                            continue
-                        dur = entry.get("duration") or 0
-                        if dur and dur < 30:
-                            continue
-                        items.append({
-                            "source": source,
-                            "url": entry.get("webpage_url") or entry.get("url", ""),
-                            "title": entry.get("title", "Unknown"),
-                            "uploader": entry.get("uploader", ""),
-                            "duration": dur,
-                            "thumbnail": entry.get("thumbnail", ""),
-                            "id": entry.get("id", ""),
-                        })
-                    return items
-            except Exception:
-                pass
-            return []
-
-        # ── SoundCloud: up to 5 results ──
+        # ── SoundCloud: up to 5 results, filter <30s ──
         sc_cmd = [
             sys.executable, "-m", "yt_dlp",
             "--dump-json", "--no-playlist", "--no-warnings",
@@ -129,92 +98,31 @@ def search():
         if os.path.isfile(COOKIES_FILE) and os.path.getsize(COOKIES_FILE) > 0:
             sc_cmd += ["--cookies", COOKIES_FILE]
 
-        # ── JioSaavn: up to 3 results ──
-        js_query = urllib.parse.quote(query, safe="")
-        js_cmd = [
-            sys.executable, "-m", "yt_dlp",
-            "--dump-json", "--no-playlist", "--no-warnings",
-            "--flat-playlist", "--max-downloads", "3",
-            f"https://www.jiosaavn.com/search/{js_query}",
-        ]
-        if YTDLP_PROXY:
-            js_cmd += ["--proxy", YTDLP_PROXY]
-        if os.path.isfile(COOKIES_FILE) and os.path.getsize(COOKIES_FILE) > 0:
-            js_cmd += ["--cookies", COOKIES_FILE]
-
-        # ── YouTube Music: up to 5 results (best for Hindi/Bollywood) ──
-        yt_cmd = [
-            sys.executable, "-m", "yt_dlp",
-            "--dump-json", "--no-playlist", "--no-warnings",
-            "--flat-playlist", "--max-downloads", "5",
-            f"ytsearch5:{query}",
-        ]
-        if YTDLP_PROXY:
-            yt_cmd += ["--proxy", YTDLP_PROXY]
-        if os.path.isfile(COOKIES_FILE) and os.path.getsize(COOKIES_FILE) > 0:
-            yt_cmd += ["--cookies", COOKIES_FILE]
-
-        # ── Bandcamp: up to 3 results ──
-        bc_cmd = [
-            sys.executable, "-m", "yt_dlp",
-            "--dump-json", "--no-playlist", "--no-warnings",
-            "--flat-playlist", "--max-downloads", "3",
-            f"bandcampsearch:{query}",
-        ]
-        if YTDLP_PROXY:
-            bc_cmd += ["--proxy", YTDLP_PROXY]
-        if os.path.isfile(COOKIES_FILE) and os.path.getsize(COOKIES_FILE) > 0:
-            bc_cmd += ["--cookies", COOKIES_FILE]
-
-        # ── Audiomack: up to 3 results ──
-        am_cmd = [
-            sys.executable, "-m", "yt_dlp",
-            "--dump-json", "--no-playlist", "--no-warnings",
-            "--flat-playlist", "--max-downloads", "3",
-            f"audiomacksearch:{query}",
-        ]
-        if YTDLP_PROXY:
-            am_cmd += ["--proxy", YTDLP_PROXY]
-        if os.path.isfile(COOKIES_FILE) and os.path.getsize(COOKIES_FILE) > 0:
-            am_cmd += ["--cookies", COOKIES_FILE]
-
-        # ── Audius: up to 3 results ──
-        au_cmd = [
-            sys.executable, "-m", "yt_dlp",
-            "--dump-json", "--no-playlist", "--no-warnings",
-            "--flat-playlist", "--max-downloads", "3",
-            f"audiussearch:{query}",
-        ]
-        if YTDLP_PROXY:
-            au_cmd += ["--proxy", YTDLP_PROXY]
-        if os.path.isfile(COOKIES_FILE) and os.path.getsize(COOKIES_FILE) > 0:
-            au_cmd += ["--cookies", COOKIES_FILE]
-
-        # Run SoundCloud first so results return fast
-        sc_results = run_yt_dlp(sc_cmd, "soundcloud")
-
-        # Then run the rest in background while holding SoundCloud results
-        other_cmds = [
-            (js_cmd, "jiosaavn"),
-            (yt_cmd, "youtube"),
-            (bc_cmd, "bandcamp"),
-            (am_cmd, "audiomack"),
-            (au_cmd, "audius"),
-        ]
-        other_results = []
-        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-            futures = [executor.submit(run_yt_dlp, cmd, src) for cmd, src in other_cmds]
-            for f in futures:
+        result = subprocess.run(sc_cmd, capture_output=True, text=True, timeout=30)
+        results = []
+        if result.returncode == 0:
+            for line in result.stdout.strip().splitlines():
+                if not line.strip():
+                    continue
                 try:
-                    other_results.extend(f.result(timeout=20))
+                    entry = json.loads(line)
                 except Exception:
-                    pass
-
-        results.extend(sc_results)
-        results.extend(other_results)
+                    continue
+                dur = entry.get("duration") or 0
+                if dur and dur < 30:
+                    continue
+                results.append({
+                    "source": "soundcloud",
+                    "url": entry.get("webpage_url") or entry.get("url", ""),
+                    "title": entry.get("title", "Unknown"),
+                    "uploader": entry.get("uploader", ""),
+                    "duration": dur,
+                    "thumbnail": entry.get("thumbnail", ""),
+                    "id": entry.get("id", ""),
+                })
 
         if not results:
-            return jsonify({"error": "No results found on SoundCloud, YouTube, Bandcamp, Audiomack, Audius, or JioSaavn"}), 400
+            return jsonify({"error": "No results found on SoundCloud"}), 400
 
         return jsonify({"results": results})
     except subprocess.TimeoutExpired:
