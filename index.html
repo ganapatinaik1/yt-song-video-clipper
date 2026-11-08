@@ -37,7 +37,7 @@ svg.ic.spin{animation:spin 0.8s linear infinite}
 .label kbd{font:inherit;padding:0 3px}
 
 /* liquid shape system */
-.liq{position:relative;border-radius:var(--r,24px);cursor:pointer;user-select:none;-webkit-user-select:none;display:flex;align-items:center;justify-content:center;transform:translateZ(0)}
+.liq{position:relative;border-radius:var(--r,24px);cursor:pointer;user-select:none;-webkit-user-select:none;display:flex;align-items:center;justify-content:center;transform:translateZ(0);transition:transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)}
 .lq-b{position:absolute;inset:-14px;z-index:-2;pointer-events:none;filter:url(#goo);transform:translateZ(0);backface-visibility:hidden}
 .lq-base{position:absolute;inset:14px;border-radius:var(--r,24px);background:var(--ink);mix-blend-mode:difference}
 .lq-bead{position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:var(--ink);will-change:transform}
@@ -49,7 +49,7 @@ svg.ic.spin{animation:spin 0.8s linear infinite}
 /* text fields: pure shape */
 .fld{--r:28px;height:56px;cursor:text;width:100%}
 .fld.sm{--r:23px;height:46px}
-.fld input{position:relative;width:100%;height:100%;background:none;border:none;outline:none;color:#fff;caret-color:#fff;mix-blend-mode:difference;font:500 13px 'Geist Mono',monospace;padding:0 26px;border-radius:inherit}
+.fld input{position:relative;width:100%;height:100%;background:none;border:none;outline:none;color:#fff;caret-color:#fff;mix-blend-mode:difference;font:500 13px 'Geist Mono',monospace;padding:0 26px;border-radius:inherit;transition:border-color 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)}
 .fld.sm input{padding:0 22px}
 .fld input::placeholder{color:rgba(255,255,255,.4)}
 .url-row{margin-bottom:26px}
@@ -57,8 +57,8 @@ svg.ic.spin{animation:spin 0.8s linear infinite}
 /* chips & buttons */
 .chip-group{display:flex;gap:10px;flex-wrap:wrap}
 .chip{--r:21px;height:42px;padding:0 22px}
-.btn-loop{--r:19px;height:38px;padding:0 18px;border:none;background:none;font-family:inherit}
-.btn-clip{--r:34px;width:100%;height:68px;border:none;background:none;font-family:inherit;margin-top:6px}
+.btn-loop{--r:19px;height:38px;padding:0 18px;border:none;background:none;font-family:inherit;transition:transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)}
+.btn-clip{--r:34px;width:100%;height:68px;border:none;background:none;font-family:inherit;margin-top:6px;transition:transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)}
 .btn-clip .lbl{font-size:16px;font-weight:700;letter-spacing:-.01em}
 .btn-clip:disabled{opacity:.4;cursor:not-allowed}
 
