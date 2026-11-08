@@ -49,9 +49,12 @@ svg.ic.spin{animation:spin 0.8s linear infinite}
 /* text fields: pure shape */
 .fld{--r:28px;height:56px;cursor:text;width:100%}
 .fld.sm{--r:23px;height:46px}
-.fld input{position:relative;width:100%;height:100%;background:none;border:none;outline:none;color:#fff;caret-color:#fff;mix-blend-mode:difference;font:500 13px 'Geist Mono',monospace;padding:0 26px;border-radius:inherit;transition:border-color 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)}
+.fld input{position:relative;width:100%;height:100%;background:none;border:none;outline:none;color:#fff;caret-color:#fff;mix-blend-mode:difference;font:500 13px 'Geist Mono',monospace;padding:0 44px 0 26px;border-radius:inherit;transition:border-color 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)}
 .fld.sm input{padding:0 22px}
 .fld input::placeholder{color:rgba(255,255,255,.4)}
+.clear-wrap{position:relative}
+.clear-btn{position:absolute;right:20px;top:50%;transform:translateY(-50%);color:#fff;font-size:18px;font-weight:bold;opacity:0;transition:opacity 0.2s ease;cursor:pointer;pointer-events:none;user-select:none;line-height:1}
+.clear-wrap:has(input:not(:placeholder-shown)) .clear-btn{opacity:1;pointer-events:auto}
 .url-row{margin-bottom:26px}
 
 /* chips & buttons */
@@ -150,7 +153,7 @@ hr.divider{border:none;height:8px;margin:30px 0;background:radial-gradient(circl
 </header>
 
 <div class="card">
-  <div class="url-row rv"><div class="liq fld"><input type="text" id="urlInput" placeholder="search up song or Enter URL" autocomplete="off" autocapitalize="off" spellcheck="false"/></div></div>
+  <div class="url-row rv"><div class="liq fld clear-wrap"><input type="text" id="urlInput" placeholder="search up song or Enter URL" autocomplete="off" autocapitalize="off" spellcheck="false"/><span class="clear-btn" id="clearBtn" onclick="clearUrlInput()">×</span></div></div>
   <div id="searchResults" style="margin-top:14px; display:none"></div>
 
   <div class="video-preview" id="preview">
@@ -781,6 +784,14 @@ document.getElementById('urlInput').addEventListener('input',()=>{
   document.getElementById('searchResults').style.display='none';
   if(fetched){ fetched=false; setMainButton('fetch', false); hideStatus(); }
 });
+function clearUrlInput(){
+  const inp=document.getElementById('urlInput');
+  inp.value='';
+  inp.focus();
+  document.getElementById('searchResults').innerHTML='';
+  document.getElementById('searchResults').style.display='none';
+}
+
 document.getElementById('urlInput').addEventListener('keydown',e=>{if(e.key==='Enter')handleMainAction()});
 
 buildQualChips([]);
