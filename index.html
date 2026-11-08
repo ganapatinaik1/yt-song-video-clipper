@@ -53,8 +53,9 @@ svg.ic.spin{animation:spin 0.8s linear infinite}
 .fld.sm input{padding:0 22px}
 .fld input::placeholder{color:rgba(255,255,255,.4)}
 .clear-wrap{position:relative}
-.clear-btn{position:absolute;right:20px;top:50%;transform:translateY(-50%);color:#fff;font-size:18px;font-weight:bold;opacity:0;transition:opacity 0.2s ease;cursor:pointer;pointer-events:none;user-select:none;line-height:1}
+.clear-btn{position:absolute;right:20px;top:50%;transform:translateY(-50%);color:#fff;font-size:18px;font-weight:bold;opacity:0;transition:opacity 0.2s ease, color 0.2s ease;cursor:pointer;pointer-events:none;user-select:none;line-height:1}
 .clear-wrap:has(input:not(:placeholder-shown)) .clear-btn{opacity:1;pointer-events:auto}
+.fld input:focus + .clear-btn{color:#000}
 .url-row{margin-bottom:26px}
 
 /* chips & buttons */
