@@ -12,7 +12,7 @@ html{background:var(--paper)}
 body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;padding:26px 20px 110px;-webkit-font-smoothing:antialiased;color:var(--ink)}
 /* #grid temporarily removed */ #grid{position:fixed;inset:0;z-index:-1;pointer-events:none;--s:36px;background-image:linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px);background-size:var(--s) var(--s)}
 #bg{position:fixed;left:0;top:0;z-index:-1;pointer-events:none}
-.wrap{position:relative;width:100%;max-width:640px;margin:0 auto}
+.wrap{position:relative;z-index:1;width:100%;max-width:640px;margin:0 auto}
 .rv{opacity:0}
 .inv{color:#000}
 .mono{font-family:'Geist Mono',monospace}
@@ -134,7 +134,7 @@ hr.divider{border:none;height:8px;margin:30px 0;background:radial-gradient(circl
 <symbol id="i-note" viewBox="0 0 24 24"><circle cx="7.5" cy="17" r="3.2"/><path d="M10.7 17V5l8 2v3"/></symbol>
 <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></symbol>
 </defs></svg>
-<div id="grid"></div>
+<div id="grid"></div><canvas id="bg"></canvas>
 
 <main class="wrap">
 <div class="bar rv">
