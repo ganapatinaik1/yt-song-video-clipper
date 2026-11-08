@@ -11,7 +11,7 @@
 html{background:var(--paper)}
 body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;padding:26px 20px 110px;-webkit-font-smoothing:antialiased;color:var(--ink)}
 /* #grid temporarily removed */ #grid{position:fixed;inset:0;z-index:-1;pointer-events:none;--s:36px;background-image:linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px);background-size:var(--s) var(--s)}
-#bg{position:fixed;left:0;top:0;z-index:-1;pointer-events:none}
+#bg{display:none}
 .wrap{position:relative;z-index:1;width:100%;max-width:640px;margin:0 auto}
 .rv{opacity:0}
 .inv{color:#000}
@@ -48,9 +48,9 @@ svg.ic.spin{animation:spin 0.8s linear infinite}
 /* text fields: pure shape */
 .fld{--r:28px;height:56px;cursor:text;width:100%}
 .fld.sm{--r:23px;height:46px}
-.fld input{position:relative;width:100%;height:100%;background:#fff;border:none;outline:none;color:#000;caret-color:#000;font:500 13px 'Geist Mono',monospace;padding:0 26px;border-radius:inherit}
+.fld input{position:relative;width:100%;height:100%;background:none;border:none;outline:none;color:#fff;caret-color:#fff;mix-blend-mode:difference;font:500 13px 'Geist Mono',monospace;padding:0 26px;border-radius:inherit}
 .fld.sm input{padding:0 22px}
-.fld input::placeholder{color:rgba(0,0,0,.4)}
+.fld input::placeholder{color:rgba(255,255,255,.4)}
 .url-row{margin-bottom:26px}
 
 /* chips & buttons */
@@ -134,7 +134,7 @@ hr.divider{border:none;height:8px;margin:30px 0;background:radial-gradient(circl
 <symbol id="i-note" viewBox="0 0 24 24"><circle cx="7.5" cy="17" r="3.2"/><path d="M10.7 17V5l8 2v3"/></symbol>
 <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></symbol>
 </defs></svg>
-<div id="grid"></div><canvas id="bg"></canvas>
+<div id="grid"></div>
 
 <main class="wrap">
 <div class="bar rv">
@@ -321,7 +321,9 @@ document.querySelectorAll('.liq').forEach(initLiq);
 
 /* ── Pixel background ── */
 (function(){
-  const cv=document.getElementById('bg'),c=cv.getContext('2d'),grid=document.getElementById('grid');
+  const cv=document.getElementById('bg');
+  if(!cv)return;
+  const c=cv.getContext('2d'),grid=document.getElementById('grid');
   const rm=matchMedia('(prefers-reduced-motion: reduce)').matches;
   let W,H,S,N,M,dpr,A,B,R,mx=-99,my=-99,px=-99,py=-99,last=0,rt,gridEl;
   function size(){
