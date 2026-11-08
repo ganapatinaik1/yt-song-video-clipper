@@ -190,29 +190,31 @@ def search():
         if os.path.isfile(COOKIES_FILE) and os.path.getsize(COOKIES_FILE) > 0:
             au_cmd += ["--cookies", COOKIES_FILE]
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
-            sc_future = executor.submit(run_yt_dlp, sc_cmd, "soundcloud")
-            js_future = executor.submit(run_yt_dlp, js_cmd, "jiosaavn")
-            yt_future = executor.submit(run_yt_dlp, yt_cmd, "youtube")
-            bc_future = executor.submit(run_yt_dlp, bc_cmd, "bandcamp")
-            am_future = executor.submit(run_yt_dlp, am_cmd, "audiomack")
-            au_future = executor.submit(run_yt_dlp, au_cmd, "audius")
-            sc_results = sc_future.result(timeout=35)
-            js_results = js_future.result(timeout=35)
-            yt_results = yt_future.result(timeout=35)
-            bc_results = bc_future.result(timeout=35)
-            am_results = am_future.result(timeout=35)
-            au_results = au_future.result(timeout=35)
+        # Run SoundCloud first so results return fast
+        sc_results = run_yt_dlp(sc_cmd, "soundcloud")
+
+        # Then run the rest in background while holding SoundCloud results
+        other_cmds = [
+            (js_cmd, "jiosaavn"),
+            (yt_cmd, "youtube"),
+            (bc_cmd, "bandcamp"),
+            (am_cmd, "audiomack"),
+            (au_cmd, "audius"),
+        ]
+        other_results = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            futures = [executor.submit(run_yt_dlp, cmd, src) for cmd, src in other_cmds]
+            for f in futures:
+                try:
+                    other_results.extend(f.result(timeout=20))
+                except Exception:
+                    pass
 
         results.extend(sc_results)
-        results.extend(js_results)
-        results.extend(yt_results)
-        results.extend(bc_results)
-        results.extend(am_results)
-        results.extend(au_results)
+        results.extend(other_results)
 
         if not results:
-            return jsonify({"error": "No results found on SoundCloud, JioSaavn, YouTube, Bandcamp, Audiomack, or Audius"}), 400
+            return jsonify({"error": "No results found on SoundCloud, YouTube, Bandcamp, Audiomack, Audius, or JioSaavn"}), 400
 
         return jsonify({"results": results})
     except subprocess.TimeoutExpired:
