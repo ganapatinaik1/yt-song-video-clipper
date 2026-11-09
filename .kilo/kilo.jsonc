@@ -1,9 +1,0 @@
-{
-  "$schema": "https://app.kilo.ai/config.json",
-  "mcp": {
-    "figma-dev-mode": {
-      "type": "remote",
-      "url": "http://127.0.0.1:3845/sse"
-    }
-  }
-}

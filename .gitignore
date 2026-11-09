@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+*.swp
+*.swo
+*.kate-swp
+.env
+venv/
+.kilo/
+.DS_Store
