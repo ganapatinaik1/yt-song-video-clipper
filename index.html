@@ -159,7 +159,7 @@ hr.divider{border:none;height:8px;margin:30px 0;background:radial-gradient(circl
   <div id="searchResults" style="margin-top:14px; display:none"></div>
 
   <div class="video-preview" id="preview">
-    <img class="vthumb" id="vthumb" src="" alt=""/>
+    <img class="vthumb" id="vthumb" src="" alt="" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTA0IiBoZWlnaHQ9IjY4IiB2aWV3Qm94PSIwIDAgMTA0IDY4IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxjb2xvcjpkaXNwbGF5IG5vbmUvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiB0ZXh0LWFuY2h5PW1pZGRsZSBkb21pbmFuY2U9Im1pZGRsZSIgZm9udC1zaXplPSIxMiIgZm9udC1mYW1pbHk9IkFyaWFsIiBmaWxsPSIjNzc3Ij5ObyB0aHVtYmJhbDwvdGV4dD48L3N2Zz4="/>
     <div><div class="video-title inv" id="vtitle"></div><div class="video-sub inv" id="vsub"></div></div>
   </div>
 
@@ -497,7 +497,7 @@ async function fetchInfo(){
       setMainButton('fetch', false);
       return;
     }
-    document.getElementById('vthumb').src=data.thumbnail;
+    document.getElementById('vthumb').src=data.thumbnail||'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTA0IiBoZWlnaHQ9IjY4IiB2aWV3Qm94PSIwIDAgMTA0IDY4IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxjb2xvcjpkaXNwbGF5IG5vbmUvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiB0ZXh0LWFuY2h5PW1pZGRsZSBkb21pbmFuY2U9Im1pZGRsZSIgZm9udC1zaXplPSIxMiIgZm9udC1mYW1pbHk9IkFyaWFsIiBmaWxsPSIjNzc3Ij5ObyB0aHVtYmJhbDwvdGV4dD48L3N2Zz4=';
     document.getElementById('vtitle').textContent=data.title;
     document.getElementById('vsub').textContent=`${data.uploader} · ${T(data.duration)}`;
     document.getElementById('preview').classList.add('visible');
